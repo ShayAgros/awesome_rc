@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="52"
+   height="52"
+   version="1.1"
+   id="svg1069"
+   sodipodi:docname="gerrit_icon_busy.svg"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)">
+  <metadata
+     id="metadata1075">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs1073" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="3436"
+     inkscape:window-height="1416"
+     id="namedview1071"
+     showgrid="false"
+     inkscape:zoom="11.865385"
+     inkscape:cx="3.2086949"
+     inkscape:cy="21.273241"
+     inkscape:window-x="0"
+     inkscape:window-y="20"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1069" />
+  <rect
+     ry="4"
+     rx="4"
+     height="40"
+     width="40"
+     y="0"
+     x="0"
+     fill="#ffaaaa"
+     id="rect1057"
+     style="fill:#ff0000;fill-opacity:1" />
+  <rect
+     ry="4"
+     rx="4"
+     height="40"
+     width="40"
+     y="12"
+     x="12"
+     fill="#aaffaa"
+     id="rect1059"
+     style="fill:#008000;fill-opacity:1" />
+  <path
+     d="m18,22l12,0l0,4l-12,0l0,-4z"
+     fill="#ff0000"
+     id="path1061"
+     style="fill:#ffaaaa;fill-opacity:1" />
+  <path
+     d="m34,22l12,0l0,4l-12,0l0,-4z"
+     fill="#ff0000"
+     id="path1063"
+     style="fill:#ffaaaa;fill-opacity:1" />
+  <path
+     d="m18,36l4,0l0,-4l4,0l0,4l4,0l0,4l-4,0l0,4l-4,0l0,-4l-4,0l0,-4z"
+     fill="#008000"
+     id="path1065"
+     style="fill:#aaffaa;fill-opacity:1" />
+  <path
+     d="m34,36l4,0l0,-4l4,0l0,4l4,0l0,4l-4,0l0,4l-4,0l0,-4l-4,0l0,-4z"
+     fill="#008000"
+     id="path1067"
+     style="fill:#aaffaa;fill-opacity:1" />
+</svg>
