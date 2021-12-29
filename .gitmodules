@@ -1,3 +1,6 @@
 [submodule "nice"]
 	path = nice
 	url = https://github.com/mut-ex/awesome-wm-nice.git
+[submodule "awesome-glorious-widgets"]
+	path = awesome-glorious-widgets
+	url = https://github.com/ShayAgros/awesome-glorious-widgets

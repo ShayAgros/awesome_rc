@@ -9,7 +9,7 @@ local dpi = require("beautiful.xresources").apply_dpi
 
 -- {{{ Main
 local theme = {}
-theme.wallpaper = "/home/ANT.AMAZON.COM/shayagr/Downloads/wallpapers/taipei-city-photo-credit-to-ethan-lin-3440×1440.jpg"
+theme.wallpaper = "/home/ANT.AMAZON.COM/shayagr/Downloads/wallpapers/marek-piwnicki-unsplash-edit-4k-2560×1440.jpg"
 -- }}}
 
 -- {{{ Styles
@@ -48,9 +48,15 @@ theme.bg_systray = theme.titlebar_bg_normal
 -- Example:
 --theme.taglist_bg_focus = "#CC9393"
 
+-- ============ task list ================
 theme.tasklist_bg_focus = '#5cd6d6'
+theme.tasklist_mouse_focus = "#353535"
 
+-- ============ tag list =================
 theme.taglist_bg_focus = "#ff0000"
+theme.taglist_bg_urgent = "#bf8dc9"
+theme.taglist_mouse_focus = theme.tasklist_mouse_focus
+
 -- }}}
 
 -- {{{ Widgets
@@ -79,8 +85,8 @@ theme.menu_width  = dpi(100)
 
 -- {{{ Icons
 -- {{{ Taglist
-theme.taglist_squares_sel   = themes_path .. "zenburn/taglist/squarefz.png"
-theme.taglist_squares_unsel = themes_path .. "zenburn/taglist/squarez.png"
+--theme.taglist_squares_sel   = themes_path .. "zenburn/taglist/squarefz.png"
+--theme.taglist_squares_unsel = themes_path .. "zenburn/taglist/squarez.png"
 --theme.taglist_squares_resize = "false"
 -- }}}
 

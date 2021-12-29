@@ -1,16 +1,16 @@
--- vim: set foldmethod=marker:
 -- If LuaRocks is installed, make sure that packages installed through it are
 -- found (e.g. lgi). If LuaRocks is not installed, do nothing.
 pcall(require, "luarocks.loader")
 
 -- Standard awesome library
-local gerrit = require("gerrit-widget.gerrit")
 local volume_ctl = require("volume-control")
 local gears = require("gears")
 local awful = require("awful")
 require("awful.autofocus")
+-- capi
+local screen = screen
+local client = client
 -- Widget and layout library
-local wibox = require("wibox")
 -- Theme handling library
 local beautiful = require("beautiful")
 -- Notification library
@@ -24,18 +24,23 @@ require("awful.hotkeys_popup.keys")
 local upper_panel = require("upper_panel")
 
 local volume_widget = volume_ctl{
-	tooltip=true,
-	device="pulse", -- device and id not really needed
-	--cardid=0		-- but better safe than sorry
+	tooltip = false,
+	device = "pulse", -- device and id not really needed
 }
 
 -- power management
 local xrandr = require("xrandr")
 local nice = require("nice")
 
+local emacs_server_pid
+
+-- lock screen
+lockscreen = require('awesome-glorious-widgets.lockscreen')
+
 -- start picom (compositor)
 awful.spawn.once("picom")
 awful.spawn.once("/usr/local/amazon/sbin/acmed-session.sh") -- Amazon's ACME
+awful.spawn.once("nm-applet") -- Network Manager applet
 
 nice {
 	--no_titlebar_maximized = true,
@@ -65,9 +70,6 @@ client.connect_signal("request::geometry", function(c)
 			}
 		end
 end)
-
--- lock screen
-require('awesome-glorious-widgets.lockscreen')
 
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
@@ -110,7 +112,7 @@ editor_cmd = terminal .. " -e " .. editor
 -- If you do not like this or do not have such a key,
 -- I suggest you to remap Mod4 to another key using xmodmap or other tools.
 -- However, you can use another modifier like Mod1, but it may interact with others.
-modkey = "Mod4"
+local modkey = "Mod4"
 
 -- Table of layouts to cover with awful.layout.inc, order matters.
 awful.layout.layouts = {
@@ -155,52 +157,7 @@ mylauncher = awful.widget.launcher({ image = beautiful.awesome_icon,
 menubar.utils.terminal = terminal -- Set the terminal for applications that require it
 -- }}}
 
--- Keyboard map indicator and switcher
-mykeyboardlayout = awful.widget.keyboardlayout()
-
 -- {{{ Wibar
--- Create a textclock widget
-mytextclock = wibox.widget.textclock()
-
--- Create a wibox for each screen and add it
-local taglist_buttons = gears.table.join(
-                    awful.button({ }, 1, function(t) t:view_only() end),
-                    awful.button({ modkey }, 1, function(t)
-                                              if client.focus then
-                                                  client.focus:move_to_tag(t)
-                                              end
-                                          end),
-                    awful.button({ }, 3, awful.tag.viewtoggle),
-                    awful.button({ modkey }, 3, function(t)
-                                              if client.focus then
-                                                  client.focus:toggle_tag(t)
-                                              end
-                                          end),
-                    awful.button({ }, 4, function(t) awful.tag.viewnext(t.screen) end),
-                    awful.button({ }, 5, function(t) awful.tag.viewprev(t.screen) end)
-                )
-
-local tasklist_buttons = gears.table.join(
-                     awful.button({ }, 1, function (c)
-                                              if c == client.focus then
-                                                  c.minimized = true
-                                              else
-                                                  c:emit_signal(
-                                                      "request::activate",
-                                                      "tasklist",
-                                                      {raise = true}
-                                                  )
-                                              end
-                                          end),
-                     awful.button({ }, 3, function()
-                                              awful.menu.client_list({ theme = { width = 250 } })
-                                          end),
-                     awful.button({ }, 4, function ()
-                                              awful.client.focus.byidx(1)
-                                          end),
-                     awful.button({ }, 5, function ()
-                                              awful.client.focus.byidx(-1)
-                                          end))
 
 local function set_wallpaper(s)
     -- Wallpaper
@@ -214,40 +171,6 @@ local function set_wallpaper(s)
     end
 end
 
-local rounded_shape = function(cr, width, height)
-	--gears.shape.partially_rounded_rect(cr, width, height, false, true, false, false, 30)
-    --gears.shape.rounded_rect(cr, width, height, 10)
-	gears.shape.parallelogram(cr, width, height, width - height/3 )
-    --gears.shape.rounded_rect(cr, width, height, 10)
-end
-
-local padded_shape = function(padded_widget, bg, shape, has_layout)
-	return 
-	{
-		{
-			{
-				has_layout and padded_widget or { widget = padded_widget },
-				left = 10,
-				right = 10,
-				widget = wibox.container.margin,
-			},
-			shape = shape,
-			bg = bg .. "55",
-			widget = wibox.container.background,
-		},
-
-		left = -7,
-		widget = wibox.container.margin,
-	}
-end
-
-local puzzle_shape = function(cr, width, height)
-	local image = cairo.ImageSurface.create_from_png("/home/ANT.AMAZON.COM/shayagr/workspace/drawings/ticket.png")
-	cr:scale (300 / image.width, 250 / image.height)
-	cr:mask_surface(image, 0, 0)
-
-end
-
 -- Re-set wallpaper when a screen's geometry changes (e.g. different resolution)
 screen.connect_signal("property::geometry", set_wallpaper)
 
@@ -255,149 +178,9 @@ awful.screen.connect_for_each_screen(function(s)
     -- Wallpaper
     set_wallpaper(s)
 
+	lockscreen(s)
+
 	upper_panel(s)
-    -- Each screen has its own tag table.
-	--awful.tag({ "1", "2", "3", "4", "5", "6", "7", "8", "9" }, s, awful.layout.layouts[1])
-
-    -- Create a promptbox for each screen
-    s.mypromptbox = awful.widget.prompt()
-    -- Create an imagebox widget which will contain an icon indicating which layout we're using.
-    -- We need one layoutbox per screen.
-    s.mylayoutbox = awful.widget.layoutbox(s)
-    s.mylayoutbox:buttons(gears.table.join(
-                           awful.button({ }, 1, function () awful.layout.inc( 1) end),
-                           awful.button({ }, 3, function () awful.layout.inc(-1) end),
-                           awful.button({ }, 4, function () awful.layout.inc( 1) end),
-                           awful.button({ }, 5, function () awful.layout.inc(-1) end)))
-    -- Create a taglist widget
-	s.mytaglist = awful.widget.taglist {
-		screen  = s,
-		filter  = awful.widget.taglist.filter.all,
-		buttons = taglist_buttons,
-		widget_template = {
-			{
-				{
-					{
-						id     = 'text_role',
-						widget = wibox.widget.textbox,
-					},
-					layout = wibox.layout.fixed.horizontal,
-				},
-				left  = 5,
-				right = 5,
-				widget = wibox.container.margin
-			},
-			id     = 'background_role',
-			widget = wibox.container.background,
-		},
-	}
-
-    -- Create a tasklist widget
-	s.mytasklist = awful.widget.tasklist {
-		screen   = s,
-		filter   = awful.widget.tasklist.filter.currenttags,
-		buttons  = tasklist_buttons,
-		style    = {
-			shape_border_width = 1,
-			shape_border_color = '#777777',
-			shape  = gears.shape.rounded_bar,
-			align	 = 'center',
-		},
-		layout   = {
-			spacing = 5,
-			spacing_widget = {
-				{
-					forced_width = 5,
-					shape        = gears.shape.circle,
-					widget       = wibox.widget.separator
-				},
-				valign = 'center',
-				halign = 'center',
-				widget = wibox.container.place,
-			},
-			layout  = wibox.layout.flex.horizontal
-		},
-		widget_template = {
-			{
-				{
-					{
-						{
-							id     = 'icon_role',
-							widget = wibox.widget.imagebox,
-						},
-						margins = 2,
-						widget  = wibox.container.margin,
-					},
-					{
-						id     = 'text_role',
-						widget = wibox.widget.textbox,
-					},
-					fill_space = true,
-					layout = wibox.layout.fixed.horizontal,
-				},
-				left  = 10,
-				right = 10,
-				widget = wibox.container.margin
-			},
-			id     = 'background_role',
-			widget = wibox.container.background,
-
-			create_callback = function(self, c, index, objects)
-				text_box = self:get_children_by_id('text_role')[1]
-				oset_mark_up_silently = text_box.set_markup_silently
-
-				text_box.set_markup_silently = function(self, text)
-					if #c.icon_sizes ~= 0 then
-						text = string.gsub(text, "-[^-]+</span>", "</span>")
-					end
-					return oset_mark_up_silently(self, text)
-				end
-			end,
-		},
-	}
-
-    -- Create the wibox
-    --s.mywibox = awful.wibar({ position = "top", screen = s})
-    -- Add widgets to the wibox
-    --s.mywibox:setup {
-        --layout = wibox.layout.align.horizontal,
-		--{ -- Left widgets
-			--layout = wibox.layout.fixed.horizontal,
-			--mylauncher,
-            --s.mytaglist,
-			--s.mypromptbox,
-		--},
-
-        --s.mytasklist, -- Middle widget
-
-        --{ -- Right widgets
-            --layout = wibox.layout.fixed.horizontal,
-			--padded_shape(gerrit{host = 'https://gerrit.anpa.corp.amazon.com:9080'}, "#60609f", rounded_shape, true),
-
-			--padded_shape(pm, "#8f609f", rounded_shape, false),
-			--padded_shape(mykeyboardlayout, "#70609f", rounded_shape, false),
-			----{
-				----{
-					----widget = mykeyboardlayout,
-				----},
-				----shape = puzzle_icon.shape,
-				----bg = "#70609f55",
-				----widget = wibox.container.background,
-			----},
-			--padded_shape( {
-				--top = 4,
-				--bottom = 4,
-				--volume_widget.widget,
-				--widget = wibox.container.margin
-			--}, "#60709f", rounded_shape, true),
-
-			--padded_shape(mytextclock, "#608f9f", rounded_shape, false),
-            ----puzzle_icon.widget,
-			----padded_shape(wibox.widget.systray(), "#609f8f", rounded_shape, false),
-			--wibox.widget.systray(),
-            --s.mylayoutbox,
-        --},
-    --}
 end)
 -- }}}
 
@@ -409,10 +192,108 @@ root.buttons(gears.table.join(
 ))
 -- }}}
 
+function send_string(string)
+    for i=1, #string do
+        local char = string:sub(i,i)
+        if char == ' ' then
+		-- space key code
+        	char = 65
+		end
+        root.fake_input('key_press'  , char)
+        root.fake_input('key_release', char)
+    end
+end
+
+function enter_url_v1(url)
+	gears.timer {
+		timeout = 2,
+		call_now	= false,
+		autostart	= true,
+		single_shot	= true,
+		callback	= function()
+			awful.spawn.easy_async({"xdotool", "key", "ctrl+t+ctrl+l", "type", url}, function()
+				-- Send return once the previous command finished to run
+				--root.fake_input('key_press'  , 36)
+				--root.fake_input('key_release', 36)
+				awful.spawn.spawn({"xdotool", "key", "Return"})
+			end)
+		end,
+		}
+end
+
+function move_clients_to_other_screen()
+
+	for _, c in ipairs(client.get()) do
+		other_screen = c.screen:get_next_in_direction("right")
+		if other_screen == c.screen then
+			other_screen = c.screen:get_next_in_direction("left")
+		end
+
+		ctag = c.first_tag 
+		new_tag = awful.tag.find_by_name(other_screen, ctag.name)
+
+		if new_tag == nil then
+		  c:move_to_screen()
+		else
+		  c:move_to_tag(new_tag)
+		end
+	end
+
+   -- for _, t in ipairs(root.tags()) do
+   --     local fallback_tag = nil
+
+   --     -- find tag with same name on any other screen
+   --     for other_screen in screen do
+   --       if other_screen ~= t.screen then
+   --         fallback_tag = awful.tag.find_by_name(other_screen, t.name)
+   --         if fallback_tag ~= nil then
+   --           break
+   --         end
+   --       end
+   --     end
+
+   --     -- no tag with same name exists, chose random one
+   --     if fallback_tag == nil then
+   --       fallback_tag = awful.tag.find_fallback()
+   --     end
+
+   --     -- Move clients to fallback tag
+   --      for _, c in ipairs(t:clients()) do
+   --         c:move_to_tag(fallback_tag)
+   --     end
+   -- end
+end
+
 -- {{{ Key bindings
 globalkeys = gears.table.join(
-    awful.key({ modkey,           }, "s",      hotkeys_popup.show_help,
+
+    awful.key({ modkey,   "Shift" }, "t", function ()
+    	enter_url_v1('www.reddit.com/r/awesomewm/')
+	end,
+	{description = "Procrastinate", group = "nahh"}),
+
+    awful.key({ modkey,           }, "a", function() 
+    	-- search if this client already exists
+    	for _, c in ipairs(client.get()) do
+    		if c.class == "awsh_gui.py" then
+    			local this_tag = awful.screen.focused().selected_tag
+    			c:move_to_tag(this_tag)
+    			client.focus = c
+    			c:raise()
+				return
+			end
+		end
+    	awful.util.spawn_with_shell("~/.local/envs/awsh_env/bin/python3 ~/workspace/scripts/awsh/awsh_gui.py") end,
+              {description="Launch awsh gui", group="scripts"}),
+
+    --awful.key({ modkey,           }, "s",      hotkeys_popup.show_help,
+              --{description="show help", group="awesome"}),
+    awful.key({ modkey,           }, "s", function() awful.util.spawn_with_shell("~/workspace/Software/rofi-scripts/monitor_layout.sh") end,
               {description="show help", group="awesome"}),
+
+	awful.key({ modkey,   "Shift" }, "m", move_clients_to_other_screen,
+		  {description="show help", group="awesome"}),
+
     awful.key({ modkey,           }, "Left",   awful.tag.viewprev,
               {description = "view previous", group = "tag"}),
     awful.key({ modkey,           }, "Right",  awful.tag.viewnext,
@@ -497,7 +378,7 @@ globalkeys = gears.table.join(
               {description = "open a terminal", group = "launcher"}),
     awful.key({}, "Print", function () awful.spawn('flameshot gui') end,
               {description = "Take screenshot", group = "launcher"}),
-	awful.key( {modkey}, '`', function()
+	awful.key( {modkey, "Shift"}, '`', function()
 			print('lock key pressed')
 			awesome.emit_signal('module::lockscreen_show')
 			--awful.spawn('awesome-client "awesome.emit_signal(\'module::lockscreen_show\')"', false)
@@ -505,8 +386,36 @@ globalkeys = gears.table.join(
 		{description = 'lock the screen', group = 'Utility'}
 	),
 
-    awful.key({ modkey, "Shift"}, "e", function () awful.spawn("emacsclient -create-frame -e (mu4e)") end,
+    awful.key({ modkey, "Shift"}, "e", function () awful.spawn("emacs --eval (mu4e)", { tag = "8" }) end,
               {description = "launch mu4e", group = "launcher"}),
+
+	-- Launch an emacs client instance if it doesn't exist yet. If it does,
+	-- bring it to focus
+    awful.key({ modkey,        }, "e", function ()
+		awful.spawn.easy_async("emacsclient --eval '(emacs-pid)'", function(stdout, stderr, reason, exit_code)
+			-- If we're not able to run emacsclient run warning
+				if exit_code == 0 then
+					emacs_server_pid = tonumber(stdout)
+
+					-- search if this client already exists
+					for _, c in ipairs(client.get()) do
+						if c.pid == emacs_server_pid then
+							local this_tag = awful.screen.focused().selected_tag
+							c:move_to_tag(this_tag)
+							client.focus = c
+							c:raise()
+							return
+						end
+					end
+					awful.spawn.raise_or_spawn("emacsclient -create-frame", { floating = true })
+				else
+					naughty.notify { text = "emacsclient call failed. Is emacs running ? return value: " .. exit_code }
+				end
+			end)
+    	end,
+		  {description = "launch an emacs client", group = "launcher"}),
+
+
     awful.key({ modkey, "Control" }, "r", awesome.restart,
               {description = "reload awesome", group = "awesome"}),
     awful.key({ modkey, "Control"   }, "q", awesome.quit,
@@ -542,8 +451,8 @@ globalkeys = gears.table.join(
               {description = "restore minimized", group = "client"}),
 
     -- Prompt
-    awful.key({ modkey },            "r",     function () awful.screen.focused().mypromptbox:run() end,
-              {description = "run prompt", group = "launcher"}),
+    --awful.key({ modkey },            "r",     function () awful.screen.focused().mypromptbox:run() end,
+              --{description = "run prompt", group = "launcher"}),
 
     awful.key({ modkey }, "x",
               function ()
@@ -709,7 +618,12 @@ awful.rules.rules = {
           "xtightvncviewer",
 		  "Nautilus",
 		  "awsh_gui.py",
-		  "matplotlib",},
+		  "ticker_gui.py",
+		  "matplotlib",
+		  "file-roller",
+	  	  "pavucontrol",
+		  "Pavucontrol",
+		  "ticker_gui_new.py"},
 
         -- Note that the name property shown in xprop might be set slightly after creation of the client
         -- and the name shown there might not match defined rules here.
@@ -733,7 +647,7 @@ awful.rules.rules = {
     --   properties = { screen = 1, tag = "2" } },
 
 	{ rule = { class = "Cisco AnyConnect Secure Mobility Client"},
-	  properties = { floating = true, screen = 1, tag = "9" }
+	  properties = { floating = true, tag = "9" }
   	},
 }
 -- }}}
@@ -761,4 +675,76 @@ end)
 
 client.connect_signal("focus", function(c) c.border_color = beautiful.border_focus end)
 client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
+
+tag.connect_signal("request::screen",
+  function(t)
+  --function(c)
+
+	--other_screen = c.screen:get_next_in_direction("right")
+
+	--ctag = c.first_tag 
+	--new_tag = awful.tag.find_by_name(other_screen, ctag.name)
+
+	--if new_tag == nil then
+	  --c:move_to_screen()
+	--else
+	  --c:move_to_tag(new_tag)
+	--end
+
+    --local fallback_tag = nil
+
+	-- find tag with same name on any other screen
+	for other_screen in screen do
+	  if other_screen ~= t.screen then
+		fallback_tag = awful.tag.find_by_name(other_screen, t.name)
+		if fallback_tag ~= nil then
+		  break
+		end
+	  end
+	end
+
+	-- no tag with same name exists, chose random one
+	if fallback_tag == nil then
+	  fallback_tag = awful.tag.find_fallback()
+	end
+
+	-- Move clients to fallback tag
+	 for _, c in ipairs(t:clients()) do
+		c:move_to_tag(fallback_tag)
+	end
+  end)
+
+-- Use custom icon when none exists
+client.connect_signal("manage", function(c)
+    local cairo = require("lgi").cairo
+	local icon_dir = os.getenv("HOME") .. '/.config/awesome/theme/icons/'
+    local default_icon = icon_dir .. "google-chrome.svg"
+    if c and c.valid and not c.icon then
+        local s = gears.surface(default_icon)
+        local img = cairo.ImageSurface.create(cairo.Format.ARGB32, s:get_width(), s:get_height())
+        local cr = cairo.Context(img)
+        cr:set_source_surface(s, 0, 0)
+        cr:paint()
+        c.icon = img._native
+    end
+end)
+
+-- Make emacsclient instances start in floating mode
+client.connect_signal("manage", function(c)
+	if emacs_server_pid == nil then
+		return
+	end
+
+	if c.pid == emacs_server_pid then
+		local screen_width = c.screen.geometry.width
+		local screen_height = c.screen.geometry.height
+
+		c.floating = true
+		c.width = math.floor(screen_width * 0.4)
+		c.height = math.floor(screen_height * 0.8)
+	end
+end)
+
 -- }}}
+
+-- vim: set foldmethod=marker:

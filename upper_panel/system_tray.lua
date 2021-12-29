@@ -5,14 +5,24 @@ local dpi = require('beautiful').xresources.apply_dpi
 local gerrit = require("gerrit-widget.gerrit")
 local volume_ctl = require("volume-control")
 local pm = require("battery-control")
+local word_generator = require("the4k-words"):start {}
 
 local mykeyboardlayout = awful.widget.keyboardlayout()
 local mytextclock = wibox.widget.textclock()
 local volume_widget = volume_ctl {
-	tooltip=true,
-	device="pulse", -- device and id not really needed
+	tooltip = false,
+	device= "pulse", -- device and id not really needed
 	--cardid=0		-- but better safe than sorry
 }
+
+local gerrit_widget = {
+	gerrit {host = 'https://gerrit.anpa.corp.amazon.com:9080'},
+	margins = dpi(1),
+	widget = wibox.container.margin,
+}
+
+local orglendar = require("Orglendar.orglendar")
+orglendar.register(mytextclock)
 
 local function dashed_separator_widget(args)
 	args = args or {}
@@ -83,12 +93,6 @@ local function create_system_tray(s)
 	local systray = wibox.widget.systray()
 	local spacing = dpi(6)
 
-	local gerrit_widget = {
-		gerrit {host = 'https://gerrit.anpa.corp.amazon.com:9080'},
-		margins = dpi(1),
-		widget = wibox.container.margin,
-	}
-
 	local volume = {
 		volume_widget.widget,
 		left = 2,
@@ -114,6 +118,9 @@ local function create_system_tray(s)
 
 		padded_shape(systray, spacing),
 		dashed_separator_widget { intervals = 10, attached_widget = systray },
+
+		padded_shape(word_generator, spacing),
+		dashed_separator_widget { intervals = 10 },
 
 		padded_shape(mytextclock, spacing),
 

@@ -17,15 +17,33 @@ local gears = require("gears")
 local beautiful = require("beautiful")
 local mouse = mouse
 
+local dpi = require('beautiful').xresources.apply_dpi
+
 local mpopup = require("gerrit-widget.mpopup")
 local json = require("gerrit-widget.json")
+
+local capi =
+{
+    awesome = awesome,
+}
 
 local HOME_DIR = os.getenv("HOME")
 
 local GET_PASS_CMD = "gpg -q --for-your-eyes-only --no-tty -d ~/.emacs.d/.mbsyncpass.gpg | sed -n '6p'"
 
 -- surround url with quotes so that the shell won't interpret it
-local GET_CHANGES_CMD = [[curl  -s -X GET -u shayagr:$(%s) '%s/a/changes/?q=%s']]
+--local GET_CHANGES_CMD = [[curl -s -X GET -u shayagr:%s '%s/a/changes/?q=%s']]
+local GET_CHANGES_CMD = [[ssh -p 29418 %s gerrit query --format=JSON %s | sed '1s/^/[/ ; $s/$/]/; $q ; s/$/,/' ]]
+
+function execute_long_operation()
+	print("Called to launch a cmd")
+	--spawn.easy_async_with_shell("echo Long long string | sleep 100" , function() end)
+    local pid, _, stdin, stdout, stderr = capi.awesome.spawn("/home/ANT.AMAZON.COM/shayagr/test_input", false, true)
+
+    stdin:write("Here's a message !!!!")
+
+    stdin:close()
+end
 
 ------------------------------------------
 -- gerrit backend functions
@@ -37,8 +55,9 @@ function gerrit_backend_obj:init(args)
 
 	args = args or {}
 
-	self.host	= args.host	or 'https://gerrit.anpa.corp.amazon.com:9080'
-	self.query	= args.query or 'is:reviewer AND status:open AND NOT is:wip AND NOT reviewedby:self AND NOT owner:self &o=DETAILED_ACCOUNTS&o=LABELS'
+	--self.host	= args.host	or 'https://gerrit.anpa.corp.amazon.com:9080'
+	self.host	= args.host	or 'gerrit.anpa.corp.amazon.com'
+	self.query	= args.query or 'is:reviewer AND status:open AND NOT is:wip AND NOT reviewedby:self AND NOT owner:self'
 
 	self.reviews = {}
 	self.previous_reviews = {}
@@ -46,9 +65,43 @@ function gerrit_backend_obj:init(args)
 	return self
 end
 
+gerrit_pass = -1
+
+--function print_password()
+	--output_file = io.open("/tmp/lua_temp", "w+")
+	--command = string.format(GET_CHANGES_CMD, gerrit_pass, 'https://gerrit.anpa.corp.amazon.com:9080', '')
+	--output_file:write(command)
+	--output_file:close()
+--end
+
+function print_output(output)
+	output_file = io.open("/tmp/lua_temp", "w")
+	output_file:write(output)
+	output_file:close()
+end
+
+function gerrit_backend_obj:query_password()
+		spawn.easy_async_with_shell(GET_PASS_CMD, function(stdout)
+			stdout = stdout:gsub("\n", "")
+			self.pass = stdout
+			gerrit_pass = self.pass
+
+			naughty.notify {
+				icon = HOME_DIR ..'/.config/awesome/gerrit-widget/gerrit_icon.svg',
+				title = 'pass',
+				text = "Querying",
+			}
+		end)
+end
+
 function gerrit_backend_obj:query_command()
-	return string.format(GET_CHANGES_CMD, GET_PASS_CMD, self.host, self.query:gsub(" ", "+"))
-	--return "cat /home/ANT.AMAZON.COM/shayagr/reviews.json"
+	--if self.pass == nil then
+		--self:query_password()
+	--end
+	--print_output(string.format(GET_CHANGES_CMD, self.pass, self.host, self.query:gsub(" ", "+")))
+	--return string.format(GET_CHANGES_CMD, self.pass, self.host, self.query:gsub(" ", "+"))
+	return string.format(GET_CHANGES_CMD, self.host, self.query)
+	--return "cat /home/ANT.AMAZON.COM/shayagr/reviews.json | sed '1s/^/[/ ; $s/$/]/; $q ; s/$/,/'"
 end
 
 function gerrit_backend_obj:process_command_output(output)
@@ -56,28 +109,40 @@ function gerrit_backend_obj:process_command_output(output)
 	local new_reviews = {}
 
 	-- first line in the curl output is trash, remove it
-	output = output:gsub("^[^\n]*\n", "")
+	--output = output:gsub("^[^\n]*\n", "")
 
+	--print_output(output)
+	--print("Called to process query output")
 	local json_reviews = json.decode(output)
 
 	for _, review in ipairs(json_reviews) do
-		local review_entry = {
-			subject = review.subject,
-			author	= review.owner.name,
-			project	= review.project,
-			website	= self.host .. '/' .. review._number,
-			number  = review._number,
-		}
-		table.insert(reviews, review_entry)
+	--for review_str in string.gmatch(s,'[^\r\n]+') do
+		--local review = json.decode(review_str)
 
-		-- Check if review is new or if it has been updated
-		if not self.previous_reviews["r" .. review._number] then
-			table.insert(new_reviews, review_entry)
+		-- One entry cotains stats metadata. TODO: decide whether to use it (or
+		-- specify that you want all reviews all the time)
+		if review.subject then
+			--print("processing review w subject", review.subject)
+			local review_entry = {
+				subject = review.subject,
+				author	= review.owner.name,
+				project	= review.project,
+				website	= self.host .. '/' .. review.number,
+				number  = review.number,
+			}
+			table.insert(reviews, review_entry)
+
+			-- Check if review is new or if it has been updated
+			if not self.previous_reviews["r" .. review.number] then
+				table.insert(new_reviews, review_entry)
+			end
+
+			-- Add when the last review was updated
+			reviews["r" .. review.number] = true
 		end
-
-		-- Add when the last review was updated
-		reviews["r" .. review._number] = true
 	end
+
+	--print("queried", reviews, "patches")
 
 	self.previous_reviews = reviews
 
@@ -230,9 +295,10 @@ local function create_review_popup_row(review, popup_menu)
 				vertical_spacing = 10,
 				layout = wibox.layout.align.vertical
 			},
-			left = 20,
-			bottom = 8,
-			top = 8,
+			left = dpi(10),
+			bottom = dpi(5),
+			top = dpi(5),
+			right = dpi(10),
 			layout = wibox.container.margin
 		},
 		widget = wibox.container.background
@@ -240,6 +306,8 @@ local function create_review_popup_row(review, popup_menu)
 
 	row:connect_signal("mouse::enter", function(b) b:set_bg(beautiful.bg_focus) end)
 	row:connect_signal("mouse::leave", function(b) b:set_bg(beautiful.bg_normal) end)
+
+	row:set_bg(beautiful.bg_normal)
 
 	row:buttons(
 		util.table.join(
@@ -261,6 +329,13 @@ function reviews_widget:site_update_reviews(site, reviews_table, new_reviews_tab
 	local site_menu				= site.menu
 	local reviews_num			= #reviews_table
 	local new_review_list		= "\n"
+
+	if not reviews_num then
+		return
+	end
+
+	--print_output(string.format("Queried %d reviews last time", reviews_num))
+	--print(string.format("Queried %d reviews last time", reviews_num))
 
 	-- BUG: This doesn't accommodate for less code reviews
 	-- don't update widget if there aren't new reviews
@@ -295,7 +370,7 @@ function reviews_widget:site_update_reviews(site, reviews_table, new_reviews_tab
 		}
 	end
 
-	site.wibar_nr_review.markup = reviews_num
+	site.wibar_nr_review.markup = string.format("%d", reviews_num)
 end
 
 -- For every review site (e.g. gerrit, Github, Amazon code) the function
@@ -312,6 +387,12 @@ function reviews_widget:update_reviews()
 				elseif exitcode == 0 then
 					-- transform the reviews into a table and update site widget
 					self:site_update_reviews(site, backend:process_command_output(stdout))
+				else
+					--naughty.notify {
+						--icon = HOME_DIR ..'/.config/awesome/gerrit-widget/gerrit_icon.svg',
+						--title = 'failed to query jenkins',
+						--text = "",
+					--}
 				end
 			end
 		)
@@ -337,7 +418,7 @@ function reviews_widget:init(args)
 
 	-- start a timer to update all reviews every some intervals
 	self.timer = gears.timer {
-		timeout		= 10,
+		timeout		= 30,
 		call_now 	= true,
 		autostart	= true,
 		callback	= function()

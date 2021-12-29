@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   width="240"
+   height="240"
+   viewBox="0 0 24 24"
+   id="svg5431"
+   sodipodi:docname="folder_modified.svg"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)">
+  <metadata
+     id="metadata5437">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs5435">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient6007">
+      <stop
+         style="stop-color:#a6612b;stop-opacity:1;"
+         offset="0"
+         id="stop6003" />
+      <stop
+         style="stop-color:#db9e6f;stop-opacity:1"
+         offset="1"
+         id="stop6005" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6007"
+       id="radialGradient6009"
+       cx="35.18644"
+       cy="18.864407"
+       fx="35.18644"
+       fy="18.864407"
+       r="10"
+       gradientTransform="matrix(0.7513349,-1.0354746,0.77434744,0.56186242,-29.857969,43.326989)"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1896"
+     inkscape:window-height="979"
+     id="namedview5433"
+     showgrid="false"
+     inkscape:zoom="1.9666667"
+     inkscape:cx="168.76163"
+     inkscape:cy="172.93659"
+     inkscape:window-x="8"
+     inkscape:window-y="48"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg5431"
+     inkscape:pagecheckerboard="true" />
+  <path
+     id="path6001"
+     d="M 10,4 H 4 C 2.89,4 2,4.89 2,6 v 12 a 2,2 0 0 0 2,2 h 16 a 2,2 0 0 0 2,-2 V 8 C 22,6.89 21.1,6 20,6 h -8 z"
+     inkscape:connector-curvature="0"
+     style="fill:url(#radialGradient6009);fill-opacity:1" />
+</svg>

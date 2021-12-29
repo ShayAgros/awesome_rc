@@ -8,7 +8,7 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="console.svg"
+   sodipodi:docname="console_modified.svg"
    id="svg4"
    viewBox="0 0 24 24"
    height="24"
@@ -22,7 +22,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -33,8 +33,8 @@
      inkscape:window-maximized="1"
      inkscape:window-y="40"
      inkscape:window-x="0"
-     inkscape:cy="19.413149"
-     inkscape:cx="26.767807"
+     inkscape:cy="14.632709"
+     inkscape:cx="16.848394"
      inkscape:zoom="16.734861"
      showgrid="false"
      id="namedview6"
@@ -49,8 +49,18 @@
      bordercolor="#666666"
      pagecolor="#ffffff"
      inkscape:pagecheckerboard="true" />
-  <path
-     style="fill:#ffffff"
-     id="path2"
-     d="M13,19V16H21V19H13M8.5,13L2.47,7H6.71L11.67,11.95C12.25,12.54 12.25,13.5 11.67,14.07L6.74,19H2.5L8.5,13Z" />
+  <g
+     id="g11838"
+     transform="translate(-24)">
+    <path
+       id="path866"
+       d="m 37,19 v -3 h 8 v 3 h -8"
+       style="fill:#f99898;fill-opacity:1"
+       inkscape:connector-curvature="0" />
+    <path
+       id="path861"
+       d="M 32.5,13 26.47,7 h 4.24 l 4.96,4.95 c 0.58,0.59 0.58,1.55 0,2.12 L 30.74,19 H 26.5 Z"
+       style="fill:#9fe8f9;fill-opacity:1"
+       inkscape:connector-curvature="0" />
+  </g>
 </svg>

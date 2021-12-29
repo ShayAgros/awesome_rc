@@ -14,6 +14,7 @@ local timer = gears.timer or timer
 local spawn = awful.spawn or awful.util.spawn
 local watch = awful.spawn and awful.spawn.with_line_callback
 
+local dpi = require('beautiful').xresources.apply_dpi
 
 ------------------------------------------
 -- Private utility functions
@@ -230,18 +231,48 @@ function vwidget:create_widget(args)
 		resize = true,
 	}
 
-	self.widget = img_widget
+	local sink_img = wibox.widget
+	{
+		widget = wibox.widget.imagebox,
+		resize = true,
+	}
+
+	local widget = wibox.widget.base.make_widget_declarative {
+		img_widget,
+		sink_img,
+		spacing = dpi(4),
+		layout = wibox.layout.fixed.horizontal,
+	}
+
+	local headphones_img = cairo.ImageSurface.create(cairo.Format.ARGB32, 98, 138.959)
+	-- set the source 
+	self.is = gears.surface(string.gsub("~/.config/awesome/volume-control/headphones.png", "~", os.getenv("HOME")))
+	local cr  = cairo.Context(headphones_img)
+	-- draw the note symbol on the canvas
+	cr:set_source_surface(self.is, 0, 0)
+	cr:paint()
+	sink_img:set_image(headphones_img)
+
+	self.widget = widget
+	self.img_widget = img_widget
+	self.sink_img = sink_img
+	self.headphones_img = headphones_img
 
 	self.state_imgs = {}
 end
 
 function vwidget:create_menu()
     local sinks = {}
-    for i, sink in ipairs(self:list_sinks()) do
-        table.insert(sinks, {sink.description, function()
-            self:set_default_sink(sink.name)
+    --for i, sink in ipairs(self:list_sinks()) do
+        --table.insert(sinks, {sink.description, function()
+            --self:set_default_sink(sink.name)
+        --end})
+    --end
+	for _, sink in ipairs({ "computer", "headphones"}) do
+        table.insert(sinks, {sink, function() 
         end})
-    end
+	end
+
     return awful.menu { items = {
         { "mute", function() self:mute() end },
         { "unmute", function() self:unmute() end },
@@ -313,15 +344,25 @@ end
 function vwidget:update_widget(setting)
     --self.widget:set_markup(
         --self.widget_text[setting.state]:format(setting.volume))
-	
-	self.widget:set_image(self:get_volume_image(setting))
+	command = string.gsub("bash -c ~/.config/awesome/volume-control/get_sink.sh", "~", os.getenv("HOME"))
+	local default_sink = readcommand(command)
+
+	--print("default sink is", default_sink)
+
+	if default_sink == "h\n" then
+		self.sink_img:set_image(self.headphones_img)
+	else
+		self.sink_img:set_image(nil)
+	end
+
+	self.img_widget:set_image(self:get_volume_image(setting))
 end
 
 -- tooltip
 function vwidget:create_tooltip(args)
     self.tooltip_text = args.tooltip_text or [[
 Volume: ${volume}% ${state} ]]
-    self.tooltip = args.tooltip and awful.tooltip{objects={self.widget},
+    self.tooltip = args.tooltip and awful.tooltip{objects={self.img_widget},
                                                   bg="#3c3851",
                                                   mode="outside"}
 end
