@@ -407,6 +407,7 @@ globalkeys = gears.table.join(
 							return
 						end
 					end
+					emacs_key_binding_pressed = true
 					awful.spawn.raise_or_spawn("emacsclient -create-frame", { floating = true })
 				else
 					naughty.notify { text = "emacsclient call failed. Is emacs running ? return value: " .. exit_code }
@@ -731,6 +732,10 @@ end)
 
 -- Make emacsclient instances start in floating mode
 client.connect_signal("manage", function(c)
+	if emacs_key_binding_pressed == nil then
+		return
+	end
+
 	if emacs_server_pid == nil then
 		return
 	end
@@ -742,6 +747,10 @@ client.connect_signal("manage", function(c)
 		c.floating = true
 		c.width = math.floor(screen_width * 0.4)
 		c.height = math.floor(screen_height * 0.8)
+
+		-- avoid having this variable set when launching emacs client
+		-- not using the keybinding
+		emacs_key_binding_pressed = nil
 	end
 end)
 

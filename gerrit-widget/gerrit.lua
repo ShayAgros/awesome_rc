@@ -33,7 +33,7 @@ local GET_PASS_CMD = "gpg -q --for-your-eyes-only --no-tty -d ~/.emacs.d/.mbsync
 
 -- surround url with quotes so that the shell won't interpret it
 --local GET_CHANGES_CMD = [[curl -s -X GET -u shayagr:%s '%s/a/changes/?q=%s']]
-local GET_CHANGES_CMD = [[ssh -p 29418 %s gerrit query --format=JSON %s | sed '1s/^/[/ ; $s/$/]/; $q ; s/$/,/' ]]
+local GET_CHANGES_CMD = [[ ssh -p 29418 %s gerrit query --format=JSON %s 2>/dev/null | sed '1s/^/[/ ; $s/$/]/; $q ; s/$/,/' ]]
 
 function execute_long_operation()
 	print("Called to launch a cmd")
@@ -110,6 +110,9 @@ function gerrit_backend_obj:process_command_output(output)
 
 	-- first line in the curl output is trash, remove it
 	--output = output:gsub("^[^\n]*\n", "")
+	if output == "" then
+		return reviews, new_reviews
+	end
 
 	--print_output(output)
 	--print("Called to process query output")
