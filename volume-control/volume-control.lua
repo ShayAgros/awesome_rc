@@ -110,6 +110,9 @@ end
 function vcontrol:update(status)
     local volume = status:match("(%d?%d?%d)%%")
     local state  = status:match("%[(o[nf]*)%]")
+
+    self.volume = tonumber(volume)
+
     if volume and state then
         local volume = tonumber(volume)
         local state = state:lower()
@@ -140,6 +143,7 @@ function vcontrol:get()
 end
 
 function vcontrol:up()
+    local new_volume = 5 + tonumber(self.volume)
     self:update(self:mixercommand("set", self.channel, self.step .. "+"))
 end
 
@@ -198,7 +202,7 @@ end
 local vwidget = class(vcontrol)
 
 function vwidget:init(args)
-    vcontrol.init(self, args)
+  vcontrol.init(self, args)
 
 	self.lclick = args.lclick or "toggle"
 	self.mclick = args.mclick or "pavucontrol"
@@ -225,6 +229,14 @@ end
 -- text widget
 function vwidget:create_widget(args)
 
+	local headphones_img = cairo.ImageSurface.create(cairo.Format.ARGB32, 98, 138.959)
+	-- set the source 
+	self.is = gears.surface(string.gsub("~/.config/awesome/volume-control/headphones.png", "~", os.getenv("HOME")))
+	local cr  = cairo.Context(headphones_img)
+	-- draw the note symbol on the canvas
+	cr:set_source_surface(self.is, 0, 0)
+	cr:paint()
+
 	local img_widget = wibox.widget
 	{
 		widget = wibox.widget.imagebox,
@@ -233,6 +245,7 @@ function vwidget:create_widget(args)
 
 	local sink_img = wibox.widget
 	{
+    image = headphones_img,
 		widget = wibox.widget.imagebox,
 		resize = true,
 	}
@@ -243,15 +256,6 @@ function vwidget:create_widget(args)
 		spacing = dpi(4),
 		layout = wibox.layout.fixed.horizontal,
 	}
-
-	local headphones_img = cairo.ImageSurface.create(cairo.Format.ARGB32, 98, 138.959)
-	-- set the source 
-	self.is = gears.surface(string.gsub("~/.config/awesome/volume-control/headphones.png", "~", os.getenv("HOME")))
-	local cr  = cairo.Context(headphones_img)
-	-- draw the note symbol on the canvas
-	cr:set_source_surface(self.is, 0, 0)
-	cr:paint()
-	sink_img:set_image(headphones_img)
 
 	self.widget = widget
 	self.img_widget = img_widget
@@ -269,7 +273,7 @@ function vwidget:create_menu()
         --end})
     --end
 	for _, sink in ipairs({ "computer", "headphones"}) do
-        table.insert(sinks, {sink, function() 
+        table.insert(sinks, {sink, function()
         end})
 	end
 
@@ -294,9 +298,9 @@ function vwidget:show_menu()
 end
 
 function vwidget:get_volume_image(setting)
-	
+
 	local range = setting.volume == 0 and 0 or setting.volume // (100 / 30) + 1
-	local widget_img_path = string.gsub("~/.config/awesome/volume-control/drawing.png", "~", os.getenv("HOME"))
+	local widget_img_path = gears.filesystem.get_configuration_dir() .. "/volume-control/drawing.png"
 
 	if not self.state_imgs[range] then
 
@@ -347,12 +351,13 @@ function vwidget:update_widget(setting)
 	command = string.gsub("bash -c ~/.config/awesome/volume-control/get_sink.sh", "~", os.getenv("HOME"))
 	local default_sink = readcommand(command)
 
-	--print("default sink is", default_sink)
-
 	if default_sink == "h\n" then
-		self.sink_img:set_image(self.headphones_img)
+--		self.sink_img:set_image(self.headphones_img)
+    self.sink_img.visible = true
 	else
-		self.sink_img:set_image(nil)
+    self.sink_img.visible = false
+--    self.sink_img.visible = false
+--		self.sink_img:set_image(nil)
 	end
 
 	self.img_widget:set_image(self:get_volume_image(setting))

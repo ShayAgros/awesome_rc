@@ -5,7 +5,7 @@ local dpi = require('beautiful').xresources.apply_dpi
 local gerrit = require("gerrit-widget.gerrit")
 local volume_ctl = require("volume-control")
 local pm = require("battery-control")
-local word_generator = require("the4k-words"):start {}
+local word_generator = require("the4k-words").start()
 
 local mykeyboardlayout = awful.widget.keyboardlayout()
 local mytextclock = wibox.widget.textclock()
@@ -14,6 +14,9 @@ local volume_widget = volume_ctl {
 	device= "pulse", -- device and id not really needed
 	--cardid=0		-- but better safe than sorry
 }
+
+--local my_vol_widget = require("volume-control.volume-widget")
+--local my_volume_widget = my_vol_widget {}
 
 local gerrit_widget = {
 	gerrit {host = 'https://gerrit.anpa.corp.amazon.com:9080'},
@@ -106,6 +109,9 @@ local function create_system_tray(s)
 		-- widgets
 		padded_shape(gerrit_widget, spacing),
 		dashed_separator_widget { intervals = 10 },
+
+    --padded_shape(my_volume_widget, spacing),
+    --dashed_separator_widget { intervals = 10 },
 
 		padded_shape(pm, spacing),
 		dashed_separator_widget { intervals = 10 },

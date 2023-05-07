@@ -9,7 +9,7 @@ local dpi = require("beautiful.xresources").apply_dpi
 
 -- {{{ Main
 local theme = {}
-theme.wallpaper = "/home/ANT.AMAZON.COM/shayagr/Downloads/wallpapers/marek-piwnicki-unsplash-edit-4k-2560×1440.jpg"
+theme.wallpaper = "/home/ANT.AMAZON.COM/shayagr/Downloads/wallpapers/han.jpg"
 -- }}}
 
 -- {{{ Styles

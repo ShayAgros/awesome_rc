@@ -3,34 +3,21 @@
 pcall(require, "luarocks.loader")
 
 -- Standard awesome library
+local volume_ctl = require("volume-control")
 local gears = require("gears")
 local awful = require("awful")
+
+require("awful.autofocus")
+-- capi
+local screen = screen
+local client = client
+-- Widget and layout library
+-- Theme handling library
+local beautiful = require("beautiful")
 -- Notification library
 local naughty = require("naughty")
 local menubar = require("menubar")
 local hotkeys_popup = require("awful.hotkeys_popup")
--- Theme handling library
-local beautiful = require("beautiful")
--- capi
-local screen = screen
-local client = client
-
--- {{{ Error handling
--- Check if awesome encountered an error during startup and fell back to
--- another config (This code will only ever execute for the fallback config)
-naughty.connect_signal("request::display_error", function(message, startup)
-    naughty.notification {
-        urgency = "critical",
-        title   = "Oops, an error happened"..(startup and " during startup!" or "!"),
-        message = message
-    }
-end)
--- }}}
-
-require("awful.autofocus")
--- Widget and layout library
-
-local volume_ctl = require("volume-control")
 
 -- Enable hotkeys help widget for VIM and other apps
 -- when client with a matching name is opened:
@@ -38,8 +25,6 @@ require("awful.hotkeys_popup.keys")
 
 local upper_panel = require("upper_panel")
 
--- BUG: you create two instances of volume_ctl (which means
--- two timers which query it)
 local volume_widget = volume_ctl{
 	tooltip = false,
 	device = "pulse", -- device and id not really needed
@@ -47,29 +32,21 @@ local volume_widget = volume_ctl{
 
 -- power management
 local xrandr = require("xrandr")
+local nice = require("nice")
 
 local emacs_server_pid
 
--- don't configure background processes when running from Xephyr (keep in mind
--- that it's up to the tester to create this env)
--- create a stub for lockscreen to avoid upsetting sumneko lsp
-local lockscreen = setmetatable({}, {__call = function() end})
-if os.getenv("Xephyr") ~= "1" then
-  local nice = require("nice")
-
 -- lock screen
-  lockscreen = require('awesome-glorious-widgets.lockscreen')
+local lockscreen = require('awesome-glorious-widgets.lockscreen')
 
 -- start picom (compositor)
-  awful.spawn.once("picom")
-  awful.spawn.once("/usr/local/amazon/sbin/acmed-session.sh") -- Amazon's ACME
-  awful.spawn.once("nm-applet") -- Network Manager applet
+awful.spawn.once("picom")
+awful.spawn.once("/usr/local/amazon/sbin/acmed-session.sh") -- Amazon's ACME
+awful.spawn.once("nm-applet") -- Network Manager applet
 
-  nice {
-  }
-else
-  print("Called from Xephyr")
-end
+nice {
+	--no_titlebar_maximized = true,
+}
 
 local shapes = require("nice.shapes")
 
@@ -95,6 +72,33 @@ client.connect_signal("request::geometry", function(c)
 			}
 		end
 end)
+
+--local my_vol_widget = require("volume-widget")
+
+-- {{{ Error handling
+-- Check if awesome encountered an error during startup and fell back to
+-- another config (This code will only ever execute for the fallback config)
+if awesome.startup_errors then
+    naughty.notify({ preset = naughty.config.presets.critical,
+                     title = "Oops, there were errors during startup!",
+                     text = awesome.startup_errors })
+end
+
+-- Handle runtime errors after startup
+do
+    local in_error = false
+    awesome.connect_signal("debug::error", function (err)
+        -- Make sure we don't go into an endless error loop
+        if in_error then return end
+        in_error = true
+
+        naughty.notify({ preset = naughty.config.presets.critical,
+                         title = "Oops, an error happened!",
+                         text = tostring(err) })
+        in_error = false
+    end)
+end
+-- }}}
 
 -- {{{ Variable definitions
 -- Themes define colours, icons, font and wallpapers.
@@ -272,7 +276,7 @@ globalkeys = gears.table.join(
 				return
 			end
 		end
-    	awful.util.spawn_with_shell("~/.local/envs/awsh_env/bin/python3 ~/workspace/scripts/awsh_wip/awsh_gui.py") end,
+    	awful.util.spawn_with_shell("~/.local/envs/awsh_env/bin/python3 ~/workspace/scripts/awsh/awsh_gui.py") end,
               {description="Launch awsh gui", group="scripts"}),
 
     --awful.key({ modkey,           }, "s",      hotkeys_popup.show_help,

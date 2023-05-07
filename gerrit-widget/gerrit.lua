@@ -22,11 +22,6 @@ local dpi = require('beautiful').xresources.apply_dpi
 local mpopup = require("gerrit-widget.mpopup")
 local json = require("gerrit-widget.json")
 
-local capi =
-{
-    awesome = awesome,
-}
-
 local HOME_DIR = os.getenv("HOME")
 
 local GET_PASS_CMD = "gpg -q --for-your-eyes-only --no-tty -d ~/.emacs.d/.mbsyncpass.gpg | sed -n '6p'"
@@ -34,16 +29,6 @@ local GET_PASS_CMD = "gpg -q --for-your-eyes-only --no-tty -d ~/.emacs.d/.mbsync
 -- surround url with quotes so that the shell won't interpret it
 --local GET_CHANGES_CMD = [[curl -s -X GET -u shayagr:%s '%s/a/changes/?q=%s']]
 local GET_CHANGES_CMD = [[ ssh -p 29418 %s gerrit query --format=JSON %s 2>/dev/null | sed '1s/^/[/ ; $s/$/]/; $q ; s/$/,/' ]]
-
-function execute_long_operation()
-	print("Called to launch a cmd")
-	--spawn.easy_async_with_shell("echo Long long string | sleep 100" , function() end)
-    local pid, _, stdin, stdout, stderr = capi.awesome.spawn("/home/ANT.AMAZON.COM/shayagr/test_input", false, true)
-
-    stdin:write("Here's a message !!!!")
-
-    stdin:close()
-end
 
 ------------------------------------------
 -- gerrit backend functions
@@ -65,26 +50,10 @@ function gerrit_backend_obj:init(args)
 	return self
 end
 
-gerrit_pass = -1
-
---function print_password()
-	--output_file = io.open("/tmp/lua_temp", "w+")
-	--command = string.format(GET_CHANGES_CMD, gerrit_pass, 'https://gerrit.anpa.corp.amazon.com:9080', '')
-	--output_file:write(command)
-	--output_file:close()
---end
-
-function print_output(output)
-	output_file = io.open("/tmp/lua_temp", "w")
-	output_file:write(output)
-	output_file:close()
-end
-
 function gerrit_backend_obj:query_password()
 		spawn.easy_async_with_shell(GET_PASS_CMD, function(stdout)
 			stdout = stdout:gsub("\n", "")
 			self.pass = stdout
-			gerrit_pass = self.pass
 
 			naughty.notify {
 				icon = HOME_DIR ..'/.config/awesome/gerrit-widget/gerrit_icon.svg',
@@ -130,7 +99,7 @@ function gerrit_backend_obj:process_command_output(output)
 				subject = review.subject,
 				author	= review.owner.name,
 				project	= review.project,
-				website	= self.host .. '/' .. review.number,
+				website	= 'https://' .. self.host .. ':9080/' .. review.number,
 				number  = review.number,
 			}
 			table.insert(reviews, review_entry)
@@ -157,7 +126,6 @@ function gerrit_backend_obj.mt:__call(self, ...)
 end
 
 gerrit_backend_obj = setmetatable(gerrit_backend_obj, gerrit_backend_obj.mt)
-
 
 ------------------------------------------
 -- gerrit backend functions
@@ -205,7 +173,7 @@ end
 
 function reviews_widget:create_wibar_widget()
 
-	local site_widget = {}
+	local site_widgets = {}
 	local wibar_widget
 
 	local add_backend = function(backend_site)
@@ -263,13 +231,15 @@ function reviews_widget:create_wibar_widget()
 	end -- add_backend
 
 	for _, site in ipairs(self.review_sites) do
-		table.insert(site_widget, add_backend(site))
+		local site_widget = add_backend(site)
+		table.insert(site_widgets, site_widget)
+		site.site_widget = site_widget
 	end
 
 	-- Make the widgets horizontal
-	site_widget.layout = wibox.layout.fixed.horizontal
+	site_widgets.layout = wibox.layout.fixed.horizontal
 
-	wibar_widget = wibox.widget(site_widget)
+	wibar_widget = wibox.widget(site_widgets)
 
 	self.wibar_widget = wibar_widget
 end
@@ -277,7 +247,7 @@ end
 -- Create one entry in the popup menu for a review website.
 -- Each line has thee vertical fields: project name, patch subject
 -- and patch author.
-local function create_review_popup_row(review, popup_menu)
+local function create_review_popup_row(review, site_widget, popup_menu)
 	local row = wibox.widget
 	{
 		{
@@ -288,7 +258,8 @@ local function create_review_popup_row(review, popup_menu)
 					widget = wibox.widget.textbox
 				},
 				{
-					text = '  ' .. review.subject,
+					-- Don't print more than 50 chars
+					text = '  ' .. review.subject:sub(1, 50),
 					widget = wibox.widget.textbox
 				},
 				{
@@ -316,8 +287,10 @@ local function create_review_popup_row(review, popup_menu)
 		util.table.join(
 			-- left mouse click
 			button({}, 1, function()
+				print("xdg-open " .. review.website)
 				spawn.with_shell("xdg-open " .. review.website)
 				popup_menu.visible = false
+				site_widget.site_widget:set_regular_icon()
 			end)
 		)
 	)
@@ -353,7 +326,7 @@ function reviews_widget:site_update_reviews(site, reviews_table, new_reviews_tab
 	}
 
 	for _, review in ipairs(reviews_table) do
-		table.insert(review_buttons, create_review_popup_row(review, site_menu))
+		table.insert(review_buttons, create_review_popup_row(review, site, site_menu))
 	end
 
 	site_menu:setup(review_buttons)

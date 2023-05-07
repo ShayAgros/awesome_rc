@@ -92,14 +92,19 @@ local taglist_buttons = gears.table.join(
                 )
 
 local function paint_when_occupied(object, c, index, _)
-		local ib = object:get_children_by_id('tag_icon')[1]
-		local tag_configs = tags_configurations[index]
+  local ib = object:get_children_by_id('tag_icon')[1]
+  local tag_configs = tags_configurations[index]
 
-		if #c:clients() > 0 then
-			ib:set_image(tag_configs.colored_icon)
-		else
-			ib:set_image(tag_configs.icon)
-		end
+  if index > #tags_configurations then
+    print("For some reason called to update tag index", index)
+    return
+  end
+
+  if #c:clients() > 0 then
+    ib:set_image(tag_configs.colored_icon)
+  else
+    ib:set_image(tag_configs.icon)
+  end
 end
 
 local rounded_shape = function(cr, width, height)

@@ -27,7 +27,7 @@ local power_widget = { mt = {} }
 
 function power_widget:create_widget()
 	local widget = wibox.widget.textbox()
-	widget.set_align("right")
+	widget:set_align("right")
 	widget:set_markup("100")
 	return widget
 end

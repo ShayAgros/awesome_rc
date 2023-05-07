@@ -7,20 +7,21 @@ local tags_list = require('upper_panel.tags_list')
 local task_list	= require('upper_panel.task_list')
 local system_tray = require('upper_panel.system_tray')
 local layout_box = require('upper_panel.layout_box')
--- remove later
-local naughty = require("naughty")
+
 
 local function tags_shape(cr, width, height)
 	gears.shape.rounded_rect(cr, width, height, 6)
 end
 
--- math.floor function is very important here. Passing fractions for widget
--- width would cause pixels not being displayed correctly
+--- Function to create the upper panel in a given screen
+---@param s table
 local upper_panel = function(s)
 
 	local screen_width = s.geometry.width
-	local screen_height = s.geometry.height
+	--local screen_height = s.geometry.height
 
+	-- math.floor function is very important here. Passing fractions for widget
+	-- width would cause pixels not being displayed correctly
 	local left_panel_width = math.floor(screen_width * 0.3)
 	local center_panel_width = math.floor(screen_width * 0.3)
 
