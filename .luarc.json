@@ -5,10 +5,11 @@
 		    "?/init.lua"
 	],
 	"runtime.version": {
-				"default": "Lua 5.4"
+				"default": "Lua 5.3"
 	},
 
-	"workspace.library" : ["/home/ANT.AMAZON.COM/shayagr/workspace/Software/awesome/lib/", "/home/ANT.AMAZON.COM/shayagr/.luarocks/share/lua/5.3/"],
+	"workspace.library" : ["/home/ANT.AMAZON.COM/shayagr/workspace/software/awesome/lib/", "/home/ANT.AMAZON.COM/shayagr/.luarocks/share/lua/5.3/"],
 
-	"diagnostics.globals" : ["screen", "client", "mouse", "awesome", "root"]
+	"diagnostics.globals" : ["screen", "client", "mouse", "awesome", "root"],
+    "workspace.checkThirdParty": false
 }
