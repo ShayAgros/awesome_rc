@@ -127,6 +127,27 @@ awful.mouse.append_global_mousebindings({
 })
 -- }}}
 
+--  {{{ Custom functions
+local function move_clients_to_other_screen()
+
+	for _, c in ipairs(client.get()) do
+		other_screen = c.screen:get_next_in_direction("right")
+		if other_screen == c.screen then
+			other_screen = c.screen:get_next_in_direction("left")
+		end
+
+		ctag = c.first_tag
+		new_tag = awful.tag.find_by_name(other_screen, ctag.name)
+
+		if new_tag == nil then
+		  c:move_to_screen()
+		else
+		  c:move_to_tag(new_tag)
+		end
+	end
+end
+--  }}}
+
 -- {{{ Key bindings
 
 -- General Awesome keys
@@ -461,7 +482,8 @@ ruled.client.connect_signal("request::rules", function()
             instance = { "copyq", "pinentry" },
             class    = {
                 "Arandr", "Blueman-manager", "Gpick", "Kruler", "Sxiv",
-                "Tor Browser", "Wpa_gui", "veromix", "xtightvncviewer"
+                "Tor Browser", "Wpa_gui", "veromix", "xtightvncviewer", "awsh_gui.py", "ticker_gui.py", "matplotlib",
+                "pavucontrol", "Pavucontrol"
             },
             -- Note that the name property shown in xprop might be set slightly after creation of the client
             -- and the name shown there might not match defined rules here.
