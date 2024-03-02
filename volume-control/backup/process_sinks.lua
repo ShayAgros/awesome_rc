@@ -170,7 +170,7 @@ function pavu:query_sinks_async(cb_func)
       f:close()
     end
 
-    -- no really asynchronous
+    -- not really asynchronous
     cb_func(sinks)
   else
     spawn.easy_async_with_shell(

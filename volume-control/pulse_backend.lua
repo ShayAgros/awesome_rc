@@ -1,6 +1,10 @@
 #!/usr/bin/env lua
 local _, spawn = pcall(require, "awful.spawn")
 
+-- Lua promises
+-- https://github.com/zserge/lua-promises
+local deferred = require('deferred')
+
 local function create_entry(line, current_indent, parent)
   local entry
 
@@ -77,7 +81,10 @@ local pavu = {}
 --          2.1.3 if current_sink[indent] > current_indent
 --            current_sink = current_sink[parent][parent]
 --            and then same as 2.1.1
-local function query_sinks(pavu_lines)
+-- TODO: You have to change the way you create entries.
+-- It makes no sense that to get the description you'd need to do
+--  sinks.Description[1] (it's not expected to get a table back)
+local function process_pactl_sinks_output(pavu_lines)
   local current_sink
   local sinks = {}
 
@@ -109,7 +116,7 @@ local function query_sinks(pavu_lines)
 
       -- initialize current sink
       if current_sink == nil then
-        current_sink = { ["number"] = current_sink_nr, ["indent"] = 0 }
+        current_sink = { ["number"] = tonumber(current_sink_nr), ["indent"] = 0 }
         do break end
       end
 
@@ -161,20 +168,20 @@ local function query_sinks(pavu_lines)
   return sinks
 end
 
-function pavu:query_sinks_async(cb_func)
+function pavu:query_sinks_async()
+  local d = deferred.new()
   local sinks
   -- called from command line
   if arg then
-    local f = assert(io.open("./sample_sinks.txt", "r"))
-    if f then
-      sinks = query_sinks(f)
-      f:close()
+    -- In this case we're synchronous
+    local command = assert(io.popen("pactl list sinks"))
+    if command then
+      sinks = process_pactl_sinks_output(command)
+      command:close()
     end
 
-    -- no really asynchronous
-    cb_func(sinks)
+    d:resolve(sinks)
   else
-
     local output_lines = {}
     -- the query_sinks file expects a file. Make the string appear to have lines
     -- function
@@ -191,29 +198,195 @@ function pavu:query_sinks_async(cb_func)
       {
         stdout = function(line) table.insert(output_lines, line) end,
         output_done = function()
-          sinks = query_sinks(output_lines)
-          print("Active volume is", sinks.active.Volume.left, "muted:", sinks.active.Volume.muted)
-          cb_func(sinks)
+          sinks = process_pactl_sinks_output(output_lines)
+          --print("Active volume is", sinks.active.Volume.left, "muted:", sinks.active.Volume.muted)
+          d:resolve(sinks)
+          --cb_func(sinks)
         end
       })
   end
+
+  return d
 end
 
-function pavu:test()
-  self:query_sinks_async(function(sinks)
+function pavu:query_default_sink_async(cb_func)
+  self:query_sinks_async():next(function(sinks)
+    return self:query_default_sink(sinks)
+  end):next(function(default_sink)
+    cb_func(default_sink)
+  end)
+end
+
+-- Modify the volume, amount is in percentage and can be negative
+function pavu:modify_volume(sink, amount)
+  local sink_name = sink.Name[1]
+
+  local new_volume
+  local current_vol
+  if amount >= 0 then
+    current_vol = math.max(sink.Volume.left, sink.Volume.right)
+    print(current_vol + amount)
+    new_volume = math.min(current_vol + amount, 100)
+  else
+    current_vol = math.min(sink.Volume.left, sink.Volume.right)
+    print(current_vol + amount)
+    new_volume = math.max(current_vol + amount, 0)
+  end
+
+  -- remove decimal point which pactl doesn't know how to read
+  new_volume = math.floor(new_volume)
+
+  sink.Volume.left = new_volume
+  sink.Volume.right = new_volume
+  --print("modifying volume to", new_volume)
+
+  if arg then
+    --print("Executing", "pactl set-sink-volume " .. sink_name .. " " .. new_volume .. "%")
+    os.execute("pactl set-sink-volume " .. sink_name .. " " .. new_volume .. "%")
+  else
+    --print("Executing", "pactl set-sink-volume " .. sink_name .. " " .. new_volume .. "%")
+    spawn("pactl set-sink-volume " .. sink_name .. " " .. new_volume .. "%")
+  end
+end
+
+function pavu:toggle_mute()
+  if arg then
+    os.execute("pactl set-sink-mute @DEFAULT_SINK@ toggle")
+  else
+    spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle")
+  end
+end
+
+-- Asynchronous, uses promises
+-- Gets the query result of the default sink
+---@param sinks table
+function pavu:query_default_sink(sinks)
+  local d = deferred.new()
+
+  local function default_sink_by_name(_sinks, default_sink_name)
+    for _, sink in ipairs(_sinks) do
+      local sink_name = sink.Name[1]
+
+      if default_sink_name == sink_name then
+        return sink
+      end
+    end
+  end
+
+  if arg then
+    local command = assert(io.popen("pactl get-default-sink"))
+
+    local default_sink_str = command:read("*line")
+    command:close()
+
+    d:resolve(default_sink_by_name(sinks, default_sink_str))
+  else
+
+    local output_lines = {}
+    spawn.with_line_callback("pactl get-default-sink",
+      {
+        stdout = function(line) table.insert(output_lines, line) end,
+        output_done = function()
+          local default_sink_str = output_lines[1]
+          d:resolve(default_sink_by_name(sinks, default_sink_str))
+        end
+      })
+  end
+
+  return d
+end
+
+function pavu:set_event_listener(callback_function)
+  print("Setting event listener")
+  local pid = spawn.with_line_callback("pactl subscribe", {
+    stdout = function(line)
+
+      print("Received a line:", line)
+      local _, _, entity = string.find(line, "Event '%a+' on (%a+)")
+
+      if entity ~= "sink" then
+        do return end
+      end
+
+      callback_function()
+
+    end,
+    stderr = function(line)
+      print("got error", line)
+    end
+  })
+
+  -- If the rc is a number then the process has been executed
+  -- successfully
+  if type(pid) == "number" then
+    awesome.connect_signal("exit", function()
+      spawn.spawn({"kill", tostring(pid)})
+    end)
+  end
+end
+
+function pavu:set_default_sink(sink_index)
+  if arg then
+    os.execute("pactl set-default-sink " .. tostring(sink_index))
+  else
+    spawn("pactl set-default-sink " .. tostring(sink_index))
+  end
+end
+
+function pavu:test_query()
+  self:query_sinks_async():next(function(sinks)
     local inspect = require "inspect"
     for i, sink in ipairs(sinks) do
       print("============================== Sink number", i, "==============================")
       print(inspect(sink))
       print("\n\n\n\n\n\n\n\n")
     end
+
+    print("============================== Active sync ==============================")
+    print(inspect(sinks.active))
+    print("\n\n\n\n\n\n\n\n")
   end
   )
 end
 
+function pavu:test_volume_change()
+  self:query_sinks_async():next(function(sinks)
+    print("Executing volume change")
+    self:modify_volume(sinks.active, 30)
+  end)
+end
+
+function pavu:test_list_sinks()
+  print("List of sinks:")
+
+  --local sink_names = self:list_sinks()
+  --for _, sink_name in ipairs(sink_names) do
+    --print(sink_name)
+  --end
+end
+
+function pavu:test_get_default_index()
+  self:query_sinks_async()
+    :next(function (sinks)
+      print("Received", #sinks, "responses")
+      return self:query_default_sink(sinks)
+  end):next(function(default_sink)
+      print("index is", default_sink.number)
+  end)
+end
+
+function pavu:test_query_default_sink()
+  self:query_default_sink_async(function(sink)
+    print("Default sink is", sink.Description[1])
+  end)
+end
+
 -- are we executed directly ? (not from another lua script)
 if arg then
-  pavu:test()
+  pavu:test_get_default_index()
+  --pavu:test_query()
+  --pavu:test_list_sinks()
+  --pavu:test_volume_change()
 end
 
 return pavu

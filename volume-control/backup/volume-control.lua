@@ -6,10 +6,6 @@ local dpi = require('beautiful').xresources.apply_dpi
 local cairo = require("lgi").cairo
 local naughty = require('naughty')
 
--- Lua promises
--- https://github.com/zserge/lua-promises
-local deferred = require('deferred')
-
 local vol_backend = {}
 
 local function conf_backend(device)
@@ -41,8 +37,8 @@ function vol_backend:query_default_sink()
   )
 end
 
-function vol_backend:list_sinks()
-  return self.backend:query_sinks_async()
+function vol_backend:list_sinks(cb_func)
+  self.backend:query_sinks_async(cb_func)
 end
 
 function vol_backend:set_default_sink(sink_index)
@@ -135,11 +131,9 @@ local function create_image(image_path, xcoor, ycoor)
 end
 
 function vwidget:create_menu(cb_func)
-  local d = deferred.new()
-
   local sinks_manu_entries = {}
 
-  self.backend:list_sinks():next(function(sinks)
+  self.backend:list_sinks(function(sinks)
     for _, sink in ipairs(sinks) do
       table.insert(sinks_manu_entries,
         { sink.Description[1], function()
@@ -147,17 +141,15 @@ function vwidget:create_menu(cb_func)
         end })
     end
 
-    d:resolve(awful.menu { items = sinks_manu_entries })
+    cb_func(awful.menu { items = sinks_manu_entries })
   end)
-
-  return d
 end
 
 function vwidget:display_sink_options_menu()
   if self.menu then
     self.menu:hide()
   else
-    self:create_menu():next(function (menu)
+    self:create_menu(function (menu)
       self.menu = menu
       self.menu:show()
       self.menu.wibox:connect_signal("property::visible", function()
