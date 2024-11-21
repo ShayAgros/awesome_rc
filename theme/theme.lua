@@ -9,7 +9,7 @@ local dpi = require("beautiful.xresources").apply_dpi
 
 -- {{{ Main
 local theme = {}
-theme.wallpaper = "/home/ANT.AMAZON.COM/shayagr/workspace/wallpapers/minas_morgul.jpg"
+theme.wallpaper = "/home/ANT.AMAZON.COM/shayagr/workspace/wallpapers/her_majesty.png"
 -- }}}
 
 -- {{{ Styles

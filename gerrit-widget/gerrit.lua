@@ -28,7 +28,7 @@ local GET_PASS_CMD = "gpg -q --for-your-eyes-only --no-tty -d ~/.emacs.d/.mbsync
 
 -- surround url with quotes so that the shell won't interpret it
 --local GET_CHANGES_CMD = [[curl -s -X GET -u shayagr:%s '%s/a/changes/?q=%s']]
-local GET_CHANGES_CMD = [[ ssh -p 29418 %s gerrit query --format=JSON %s 2>/dev/null | sed '1s/^/[/ ; $s/$/]/; $q ; s/$/,/' ]]
+local GET_CHANGES_CMD = [[ ssh -p 29418 %s gerrit query --format=json %s 2>/dev/null | sed '1s/^/[/ ; $s/$/]/; $q ; s/$/,/' ]]
 
 ------------------------------------------
 -- gerrit backend functions

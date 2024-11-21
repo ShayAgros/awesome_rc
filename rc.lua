@@ -160,16 +160,6 @@ awful.keyboard.append_global_keybindings({
               {description = "reload awesome", group = "awesome"}),
     awful.key({ modkey, "Control"   }, "q", awesome.quit,
               {description = "quit awesome", group = "awesome"}),
-    awful.key({ modkey }, "x",
-              function ()
-                  awful.prompt.run {
-                    prompt       = "Run Lua code: ",
-                    textbox      = awful.screen.focused().mypromptbox.widget,
-                    exe_callback = awful.util.eval,
-                    history_path = awful.util.get_cache_dir() .. "/history_eval"
-                  }
-              end,
-              {description = "lua execute prompt", group = "awesome"}),
     awful.key({ modkey,           }, "Return", function () awful.spawn(terminal) end,
               {description = "open a terminal", group = "launcher"}),
     awful.key({ modkey },            "r",     function () awful.screen.focused().mypromptbox:run() end,
@@ -192,7 +182,7 @@ awful.keyboard.append_global_keybindings({
                     return
                   end
                 end
-                awful.util.spawn_with_shell("~/.local/envs/awsh_env/bin/python3 ~/workspace/scripts/awsh/awsh_gui.py")
+                awful.util.spawn_with_shell("~/.local/envs/awsh_env/bin/python3 ~/workspace/scripts/awsh_wip/awsh_gui.py")
               end,
               {description = "Launch AWS helper", group = "Application"}),
     awful.key({ modkey,           }, "s",
@@ -211,31 +201,41 @@ awful.keyboard.append_global_keybindings({
 
     awful.key({ modkey, "Shift"}, "e", function () awful.spawn("emacs --eval (mu4e)", { tag = "8" }) end,
               {description = "launch mu4e", group = "launcher"}),
+
+    awful.key({ modkey, }, "e", function () awful.spawn("emacs") end,
+              {description = "launch emacs", group = "launcher"}),
 })
 
 -- Volume control keybindings
-local volume_ctl = require("volume-control")
-local volume_widget = volume_ctl{
-	tooltip = false,
-	device = "pulse", -- device and id not really needed
+local volume_ctl = require("volume-control.volume-widget")
+local volume_widget = volume_ctl {
+  get_existing_or_create = true,
 }
 awful.keyboard.append_global_keybindings({
-    awful.key({}, "XF86AudioRaiseVolume", function() volume_widget:up() end,
+    awful.key({}, "XF86AudioRaiseVolume", function() volume_widget:emit_signal("volume_up") end,
         {description = "increase volume", group = "multimedia"}
     ),
-    awful.key({}, "XF86AudioLowerVolume", function() volume_widget:down() end,
+    awful.key({}, "XF86AudioLowerVolume", function() volume_widget:emit_signal("volume_down") end,
         {description = "decrease volume", group = "multimedia"}
     ),
-    awful.key({}, "XF86AudioMute", function() volume_widget:toggle() end,
+    awful.key({}, "XF86AudioMute", function() volume_widget:emit_signal("toggle_mute") end,
         {description = "toggle mute", group = "multimedia"}
     ),
     awful.key({}, "XF86AudioPlay", function() awful.util.spawn_with_shell("playerctl play-pause") end,
         {description = "toggle playing", group = "multimedia"}
     ),
+    -- Allow alternative keybindings to switch songs as not all keyboards have
+    -- the multimedia keys for next and prev
     awful.key({}, "XF86AudioNext", function() awful.util.spawn_with_shell("playerctl next") end,
         {description = "next track", group = "multimedia"}
     ),
     awful.key({}, "XF86AudioPrev", function() awful.util.spawn_with_shell("playerctl previous") end,
+        {description = "previous track", group = "multimedia"}
+    ),
+    awful.key({modkey, "Shift"}, "Right", function() awful.util.spawn_with_shell("playerctl next") end,
+        {description = "next track", group = "multimedia"}
+    ),
+    awful.key({modkey, "Shift"}, "Left", function() awful.util.spawn_with_shell("playerctl previous") end,
         {description = "previous track", group = "multimedia"}
 )})
 
@@ -306,10 +306,6 @@ awful.keyboard.append_global_keybindings({
               {description = "increase the number of columns", group = "layout"}),
     awful.key({ modkey, "Control" }, "l",     function () awful.tag.incncol(-1, nil, true)    end,
               {description = "decrease the number of columns", group = "layout"}),
-    awful.key({ modkey,           }, "space", function () awful.layout.inc( 1)                end,
-              {description = "select next", group = "layout"}),
-    awful.key({ modkey, "Shift"   }, "space", function () awful.layout.inc(-1)                end,
-              {description = "select previous", group = "layout"}),
 })
 
 
@@ -406,7 +402,7 @@ client.connect_signal("request::default_keybindings", function()
             {description = "toggle fullscreen", group = "client"}),
         awful.key({ modkey, "Shift"   }, "q",      function (c) c:kill()                         end,
                 {description = "close", group = "client"}),
-        awful.key({ modkey, "Control" }, "space",  awful.client.floating.toggle                     ,
+        awful.key({ modkey,  }, "\\",  awful.client.floating.toggle                     ,
                 {description = "toggle floating", group = "client"}),
         awful.key({ modkey, "Control" }, "Return", function (c) c:swap(awful.client.getmaster()) end,
                 {description = "move to master", group = "client"}),
@@ -483,7 +479,7 @@ ruled.client.connect_signal("request::rules", function()
             class    = {
                 "Arandr", "Blueman-manager", "Gpick", "Kruler", "Sxiv",
                 "Tor Browser", "Wpa_gui", "veromix", "xtightvncviewer", "awsh_gui.py", "ticker_gui.py", "matplotlib",
-                "pavucontrol", "Pavucontrol"
+                "pavucontrol", "Pavucontrol", "gnome-calculator", "Gnome-calculator"
             },
             -- Note that the name property shown in xprop might be set slightly after creation of the client
             -- and the name shown there might not match defined rules here.

@@ -3,16 +3,14 @@ local awful = require('awful')
 local gears = require('gears')
 local dpi = require('beautiful').xresources.apply_dpi
 local gerrit = require("gerrit-widget.gerrit")
-local volume_ctl = require("volume-control")
+local volume_ctl = require("volume-control.volume-widget")
 local pm = require("battery-control")
 local word_generator = require("the4k-words").start()
 
 local mykeyboardlayout = awful.widget.keyboardlayout()
 local mytextclock = wibox.widget.textclock()
 local volume_widget = volume_ctl {
-	tooltip = false,
-	device= "pulse", -- device and id not really needed
-	--cardid=0		-- but better safe than sorry
+  get_existing_or_create = true,
 }
 
 --local my_vol_widget = require("volume-control.volume-widget")
@@ -24,8 +22,9 @@ local gerrit_widget = {
 	widget = wibox.container.margin,
 }
 
-local orglendar = require("Orglendar.orglendar")
-orglendar.register(mytextclock)
+local org_todo = require('org_todo_widget')
+local org_todo_widget = org_todo()
+
 
 local function dashed_separator_widget(args)
 	args = args or {}
@@ -97,7 +96,7 @@ local function create_system_tray(s)
 	local spacing = dpi(6)
 
 	local volume = {
-		volume_widget.widget,
+		volume_widget,
 		left = 2,
 		right = 2,
 		top = 2,
@@ -107,11 +106,11 @@ local function create_system_tray(s)
 
 	s.systemtray = wibox.widget.base.make_widget_declarative {
 		-- widgets
-		padded_shape(gerrit_widget, spacing),
+		padded_shape(org_todo_widget, spacing),
 		dashed_separator_widget { intervals = 10 },
 
-    --padded_shape(my_volume_widget, spacing),
-    --dashed_separator_widget { intervals = 10 },
+		padded_shape(gerrit_widget, spacing),
+		dashed_separator_widget { intervals = 10 },
 
 		padded_shape(pm, spacing),
 		dashed_separator_widget { intervals = 10 },

@@ -88,6 +88,11 @@ end
 local created_volume_widget
 local vwidget = {}
 
+-- Allow Local Lua Debugger set breakpoints
+if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
+  require("lldebugger").start()
+end
+
 function vwidget:init(args)
   args = args or {}
 
@@ -147,7 +152,8 @@ function vwidget:create_menu(cb_func)
         end })
     end
 
-    d:resolve(awful.menu { items = sinks_manu_entries })
+    local menu_widget = awful.menu { items = sinks_manu_entries }
+    d:resolve(menu_widget)
   end)
 
   return d
